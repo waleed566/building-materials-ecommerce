@@ -5,21 +5,17 @@ declare(strict_types=1);
 require __DIR__ . '/../config/database.php';
 require __DIR__ . '/../middleware/AuthMiddleware.php';
 
-class CartController
-{
-    public function index(): void
-    {
+class CartController {
+    public function index(): void {
         $user = AuthMiddleware::requireAuth();
         $pdo = Database::getConnection();
 
         $stmt = $pdo->prepare('SELECT ci.*, p.name, p.image_url FROM cart_items ci INNER JOIN products p ON p.id = ci.product_id INNER JOIN carts c ON c.id = ci.cart_id WHERE c.user_id = :user_id');
         $stmt->execute(['user_id' => $user['user_id']]);
-
         echo json_encode(['cart' => $stmt->fetchAll()]);
     }
 
-    public function add(): void
-    {
+    public function add(): void {
         $user = AuthMiddleware::requireAuth();
         $input = json_decode(file_get_contents('php://input'), true);
 
@@ -53,7 +49,11 @@ class CartController
 
         if ($existing) {
             $updateStmt = $pdo->prepare('UPDATE cart_items SET quantity = quantity + :qty WHERE cart_id = :cart_id AND product_id = :product_id');
-            $updateStmt->execute(['qty' => $quantity, 'cart_id' => $cartId, 'product_id' => $productId]);
+            $updateStmt->execute([
+                'qty' => $quantity,
+                'cart_id' => $cartId,
+                'product_id' => $productId,
+            ]);
         } else {
             $insertStmt = $pdo->prepare('INSERT INTO cart_items (cart_id, product_id, quantity, unit_price) VALUES (:cart_id, :product_id, :quantity, :unit_price)');
             $insertStmt->execute([
